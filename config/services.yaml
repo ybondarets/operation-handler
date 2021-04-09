@@ -1,0 +1,94 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
+parameters:
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Tests/'
+
+    App\Reader\ReaderInterface:
+        class: App\Reader\CsvReader
+        arguments:
+            - '@Symfony\Component\Serializer\Encoder\CsvEncoder'
+
+    Symfony\Component\Serializer\Encoder\CsvEncoder:
+        class: Symfony\Component\Serializer\Encoder\CsvEncoder
+
+    currency.eur:
+        class: App\Dto\Currency
+        arguments:
+            - 'EUR'
+        tags: [ name: 'currency' ]
+
+    currency.usd:
+        class: App\Dto\Currency
+        arguments:
+            - 'USD'
+        tags: [ name: 'currency' ]
+
+    currency.jpy:
+        class: App\Dto\Currency
+        arguments:
+            - 'JPY'
+        tags: [ name: 'currency' ]
+
+    currency.pool:
+        class: App\Dto\Pool
+        arguments:
+            - !tagged currency
+
+    operation_type.deposit:
+        class: App\Dto\OperationType
+        arguments:
+            - !php/const:App\Dto\OperationType::DEPOSIT
+        tags: [ name: 'operation.type' ]
+
+    operation_type.withdraw:
+        class: App\Dto\OperationType
+        arguments:
+            - !php/const:App\Dto\OperationType::WITHDRAW
+        tags: [ name: 'operation.type' ]
+
+    operation_type.pool:
+        class: App\Dto\Pool
+        arguments:
+            - !tagged operation.type
+
+    user_type.private:
+        class: App\Dto\UserType
+        arguments:
+            - !php/const:App\Dto\UserType::BUSINESS
+        tags: [ name: 'user.type' ]
+
+    user_type.business:
+        class: App\Dto\UserType
+        arguments:
+            - !php/const:App\Dto\UserType::BUSINESS
+        tags: [ name: 'user.type' ]
+
+    user_type.pool:
+        class: App\Dto\Pool
+        arguments:
+            - !tagged user.type
+
+    App\Dto\OperationDtoBuilderInterface:
+        class: App\Dto\OperationDtoBuilder
+        arguments:
+            - '@currency.pool'
+            - '@operation_type.pool'
+            - '@user_type.pool'
