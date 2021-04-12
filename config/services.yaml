@@ -55,13 +55,13 @@ services:
     operation_type.deposit:
         class: App\Dto\OperationType
         arguments:
-            - !php/const:App\Dto\OperationType::DEPOSIT
+            - !php/const App\Dto\OperationType::DEPOSIT
         tags: [ name: 'operation.type' ]
 
     operation_type.withdraw:
         class: App\Dto\OperationType
         arguments:
-            - !php/const:App\Dto\OperationType::WITHDRAW
+            - !php/const App\Dto\OperationType::WITHDRAW
         tags: [ name: 'operation.type' ]
 
     operation_type.pool:
@@ -72,13 +72,13 @@ services:
     user_type.private:
         class: App\Dto\UserType
         arguments:
-            - !php/const:App\Dto\UserType::BUSINESS
+            - !php/const App\Dto\UserType::BUSINESS
         tags: [ name: 'user.type' ]
 
     user_type.business:
         class: App\Dto\UserType
         arguments:
-            - !php/const:App\Dto\UserType::BUSINESS
+            - !php/const App\Dto\UserType::PRIVATE
         tags: [ name: 'user.type' ]
 
     user_type.pool:
@@ -92,3 +92,22 @@ services:
             - '@currency.pool'
             - '@operation_type.pool'
             - '@user_type.pool'
+
+    comission.deposit.handler:
+        class: App\Handler\DepositHandler
+        tags: [ name: 'commission.handler' ]
+
+    comission.withdraw.business.handler:
+        class: App\Handler\BusinessWithdrawHandler
+        tags: [ name: 'commission.handler' ]
+
+    comission.withdraw.private.handler:
+        class: App\Handler\PrivateWithdrawHandler
+        tags: [ name: 'commission.handler' ]
+
+    App\Handler\CommissionHandler:
+        class: App\Handler\CommissionHandler
+        arguments:
+            - !tagged commission.handler
+
+

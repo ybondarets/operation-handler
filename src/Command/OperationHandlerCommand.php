@@ -2,7 +2,9 @@
 
 namespace App\Command;
 
+use App\Dto\OperationDto;
 use App\Dto\OperationDtoBuilderInterface;
+use App\Handler\CommissionHandler;
 use App\Reader\ReaderInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -23,12 +25,16 @@ class OperationHandlerCommand extends Command
     /** @var OperationDtoBuilderInterface */
     private OperationDtoBuilderInterface $dtoBuilder;
 
-    public function __construct(string $name = null, ReaderInterface $reader, OperationDtoBuilderInterface $dtoBuilder)
+    /** @var CommissionHandler  */
+    private CommissionHandler $commissionHandler;
+
+    public function __construct(ReaderInterface $reader, OperationDtoBuilderInterface $dtoBuilder, CommissionHandler $commissionHandler)
     {
-        parent::__construct($name);
+        parent::__construct();
 
         $this->reader = $reader;
         $this->dtoBuilder = $dtoBuilder;
+        $this->commissionHandler = $commissionHandler;
     }
 
     /**
@@ -56,6 +62,12 @@ class OperationHandlerCommand extends Command
 
         $inputData = $this->reader->readFile($inputFile);
         $operations = $this->createOperations($inputData);
+
+        /** @var OperationDto $operation */
+        foreach ($operations as $operation) {
+            $commission = $this->commissionHandler->handle($operation);
+            $output->writeln($commission->getValue());
+        }
 
         return Command::SUCCESS;
     }

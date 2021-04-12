@@ -6,7 +6,7 @@
     "description": "handle some operations",
     "name": "ybondarets/operation-handler",
     "require": {
-        "php": ">=7.2.5",
+        "php": ">=7.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "symfony/console": "5.2.*",
