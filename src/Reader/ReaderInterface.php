@@ -24,4 +24,11 @@ interface ReaderInterface
      * @return mixed
      */
     public function readString(string $inputString, array $options = []);
+
+    /**
+     * @param string $inputFile
+     *
+     * @return string
+     */
+    public function loadFile(string $inputFile): string;
 }

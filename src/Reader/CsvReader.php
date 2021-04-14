@@ -3,6 +3,7 @@
 namespace App\Reader;
 
 use Symfony\Component\Serializer\Encoder\CsvEncoder;
+use Webmozart\Assert\Assert;
 
 /**
  * Class CsvReader
@@ -31,7 +32,7 @@ class CsvReader implements ReaderInterface
     public function readFile(string $inputFile, array $options = [])
     {
         return $this->readString(
-            file_get_contents($inputFile),
+            $this->loadFile($inputFile),
             $options
         );
     }
@@ -52,5 +53,18 @@ class CsvReader implements ReaderInterface
                 CsvEncoder::NO_HEADERS_KEY => true,
             ], $options)
         );
+    }
+
+    /**
+     * @param string $inputFile
+     *
+     * @return string
+     */
+    public function loadFile(string $inputFile): string
+    {
+        Assert::fileExists($inputFile);
+        $content = file_get_contents($inputFile);
+
+        return $content !== false ? $content : '';
     }
 }

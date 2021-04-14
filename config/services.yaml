@@ -25,6 +25,7 @@ services:
         class: App\Reader\CsvReader
         arguments:
             - '@Symfony\Component\Serializer\Encoder\CsvEncoder'
+        public: true
 
     Symfony\Component\Serializer\Encoder\CsvEncoder:
         class: Symfony\Component\Serializer\Encoder\CsvEncoder
@@ -115,3 +116,4 @@ services:
         arguments:
             - '%env(resolve:CURRENCY_API_BASE_URL)%'
             - '%env(resolve:CURRRENCY_API_KEY)%'
+        public: true

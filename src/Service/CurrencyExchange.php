@@ -15,8 +15,6 @@ use Exception;
  */
 class CurrencyExchange implements CurrencyExchangeInterface
 {
-    private string $link = 'http://api.exchangeratesapi.io/v1/latest?access_key=2535cc5f7354043db3a59298331b0756&symbols=USD,JPY';
-
     /** @var HttpClientInterface */
     private HttpClientInterface $client;
 

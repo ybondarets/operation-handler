@@ -10,7 +10,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Webmozart\Assert\Assert;
 
 /**
  * Class OperationHandlerCommand
@@ -58,7 +57,6 @@ class OperationHandlerCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $inputFile = $input->getArgument('input');
-        Assert::fileExists($inputFile);
 
         $inputData = $this->reader->readFile($inputFile);
         $operations = $this->createOperations($inputData);
