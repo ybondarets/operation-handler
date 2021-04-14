@@ -110,4 +110,8 @@ services:
         arguments:
             - !tagged commission.handler
 
-
+    App\Service\CurrencyExchangeInterface:
+        class: App\Service\CurrencyExchange
+        arguments:
+            - '%env(resolve:CURRENCY_API_BASE_URL)%'
+            - '%env(resolve:CURRRENCY_API_KEY)%'

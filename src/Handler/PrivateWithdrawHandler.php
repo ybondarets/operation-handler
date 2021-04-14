@@ -2,9 +2,11 @@
 
 namespace App\Handler;
 
+use App\Dto\Currency;
 use App\Dto\OperationDto;
 use App\Dto\OperationType;
 use App\Dto\UserType;
+use App\Service\CurrencyExchangeInterface;
 use \DateTime;
 
 /**
@@ -26,12 +28,18 @@ class PrivateWithdrawHandler implements CommissionHandlerInterface
     /** @var array */
     private array $operationsUserHistory;
 
+    /** @var CurrencyExchangeInterface */
+    private CurrencyExchangeInterface $currencyExchange;
+
     /**
      * PrivateWithdrawHandler constructor.
+     *
+     * @param CurrencyExchangeInterface $currencyExchange
      */
-    public function __construct()
+    public function __construct(CurrencyExchangeInterface $currencyExchange)
     {
         $this->operationsUserHistory = [];
+        $this->currencyExchange = $currencyExchange;
     }
 
     /**
@@ -50,30 +58,88 @@ class PrivateWithdrawHandler implements CommissionHandlerInterface
      */
     public function handle(OperationDto $dto, Commission $commission): void
     {
-
-        if (!$this->isLimitsReached($dto)) {
-        }
-
-
+        $dto = $this->normalizeOperation($dto);
         $this->addUserOperation($dto);
 
-        $operationAmount = $dto->getAmount();
+        $userId = $dto->getUserId();
+        $date = $dto->getDate();
 
+        switch (true) {
+            case $this->isWeeklyOperationsCountReached($userId, $date):
+                $commission->setValue(
+                    $this->getCommissionForValue(
+                        $dto->getAmount()
+                    )
+                );
 
-        $commission->setValue(12);
+                break;
+            case $this->isWeeklyAmountLimitReached($userId, $date):
+                $amountToCharge = $this->getAmountToCharge($userId, $date, $dto->getAmount());
+
+                $commission->setValue(
+                    $this->getCommissionForValue(
+                        $amountToCharge
+                    )
+                );
+
+                break;
+            default:
+                $commission->setValue(0.0);
+                break;
+        }
+    }
+
+    /**
+     * @param int      $userId
+     * @param DateTime $date
+     * @param float    $currentValue
+     *
+     * @return float
+     */
+    private function getAmountToCharge(int $userId, DateTime $date, float $currentValue): float
+    {
+        $operationsAmount = $this->getWeeklyUserOperationsAmount($userId, $date);
+
+        if ($operationsAmount <= self::WEEKLY_AMOUNT_FREE_LIMIT) {
+            return 0.0;
+        }
+
+        return min($currentValue, $operationsAmount - self::WEEKLY_AMOUNT_FREE_LIMIT);
+    }
+
+    /**
+     * @param float $value
+     *
+     * @return float
+     */
+    private function getCommissionForValue(float $value): float
+    {
+        return $value * (self::PRIVATE_WITHDRAW_COMMISSION / 100);
     }
 
     /**
      * @param OperationDto $dto
      *
-     * @return bool
+     * @return OperationDto
      */
-    private function isLimitsReached(OperationDto $dto): bool
+    private function normalizeOperation(OperationDto $dto): OperationDto
     {
-        $userId = $dto->getUserId();
-        $date = $dto->getDate();
+        $result = clone $dto;
 
-        return $this->isWeeklyOperationsCountReached($userId, $date) && $this->isWeeklyAmountLimitReached($userId, $date);
+        if ($result->getCurrencyKey() !== Currency::EUR) {
+            $result->setAmount(
+                $this
+                    ->currencyExchange
+                    ->convertToEur(
+                        $result->getAmount(),
+                        $result->getCurrencyKey()
+                    )
+            );
+
+            $result->setCurrencyKey(Currency::EUR);
+        }
+
+        return $result;
     }
 
     /**
@@ -84,7 +150,7 @@ class PrivateWithdrawHandler implements CommissionHandlerInterface
      */
     private function isWeeklyOperationsCountReached(int $userId, DateTime $date): bool
     {
-        return count($this->getUserOperationsInAWeek($userId, $date)) >= self::WEEKLY_OPERATIONS_COUNT_LIMIT;
+        return count($this->getUserOperationsInAWeek($userId, $date)) > self::WEEKLY_OPERATIONS_COUNT_LIMIT;
     }
 
     /**
@@ -95,7 +161,7 @@ class PrivateWithdrawHandler implements CommissionHandlerInterface
      */
     private function isWeeklyAmountLimitReached(int $userId, DateTime $date): bool
     {
-        return $this->getWeeklyUserAmount($userId, $date) > self::WEEKLY_AMOUNT_FREE_LIMIT;
+        return $this->getWeeklyUserOperationsAmount($userId, $date) > self::WEEKLY_AMOUNT_FREE_LIMIT;
     }
 
     /**
@@ -104,7 +170,7 @@ class PrivateWithdrawHandler implements CommissionHandlerInterface
      *
      * @return float
      */
-    private function getWeeklyUserAmount(int $userId, DateTime $date): float
+    private function getWeeklyUserOperationsAmount(int $userId, DateTime $date): float
     {
         $operationsAmount = 0;
         /** @var OperationDto $operation */
