@@ -66,7 +66,7 @@ class OperationHandlerCommand extends Command
         /** @var OperationDto $operation */
         foreach ($operations as $operation) {
             $commission = $this->commissionHandler->handle($operation);
-            $output->writeln($commission->getValue());
+            $output->writeln(round($commission->getValue(), 2));
         }
 
         return Command::SUCCESS;
